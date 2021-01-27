@@ -14,7 +14,7 @@ const IPCIDR = require('ip-cidr');
  * @return {string} (firstIpAddress) - An IPv4 address.
  * @return {string} (secondIpAddress) - An ipv6 Address address.
  */
-function getFirstIpAddress(cidrStr, callback) {
+function getFirstIpAddress(cidrStr) {
 
   // Initialize return arguments for callback
   let firstIpAddress = null;
@@ -51,7 +51,7 @@ function getFirstIpAddress(cidrStr, callback) {
   // Node.js convention is to pass error data as the first argument to a callback.
   // The IAP convention is to pass returned data as the first argument and error
   // data as the second argument to the callback function.
-  return callback(firstIpAddress, secondIpAddress, callbackError);
+  return {firstIpAddress, secondIpAddress, callbackError};
 }
 
 
@@ -59,9 +59,7 @@ function getFirstIpAddress(cidrStr, callback) {
  * Calculate and return the first host IP address from a CIDR subnet.
  * @param {string} cidrStr - The IPv4 subnet expressed
  *                 in CIDR format.
- * @return {string} (firstIpAddress) - An IPv4 address.
- * @return {string} (secondIpAddress) - An ipv6 Address address.
- * @return {string} (callbackError) - any errors
+ * @return {object} with three variables (firstIpAddress) - An IPv4 address.(secondIpAddress) - An ipv6 Address address. (callbackError) - any errors
  */
 function getFirstIpAddressAndSecond(cidrStr) {
 
@@ -88,11 +86,13 @@ function getFirstIpAddressAndSecond(cidrStr) {
     // If the passed CIDR is valid, call the object's toArray() method.
     // Notice the destructering assignment syntax to get the value of the first array's element.
     [firstIpAddress] = cidr.toArray(options);
-    let secondIpAddress = getIpv4MappedIpv6Address(firstIpAddress);
-    if( secondIpAddress ) {
-      console.log(`  IPv4 ${firstIpAddress} mapped to IPv6 Address: ${secondIpAddress}`);
+    let mappedAddress = getIpv4MappedIpv6Address(firstIpAddress);
+    if( mappedAddress ) {
+      console.log(`  IPv4 ${firstIpAddress} mapped to IPv6 Address: ${mappedAddress}`);
+      secondIpAddress = mappedAddress;
     } else {
       console.error(`  Problem converting IPv4 ${firstIpAddress} into a mapped IPv6 address.`);
+      callbackError = 'Problem converting IPv4 ${firstIpAddress} into a mapped IPv6 address.';
     }
   }
       
@@ -100,7 +100,7 @@ function getFirstIpAddressAndSecond(cidrStr) {
   // Node.js convention is to pass error data as the first argument to a callback.
   // The IAP convention is to pass returned data as the first argument and error
   // data as the second argument to the callback function.
-  return firstIpAddress, secondIpAddress, callbackError;
+  return {firstIpAddress, secondIpAddress, callbackError};
 }
 
 /**
@@ -164,23 +164,24 @@ function main() {
   // Create some test data for getIpv4MappedIpv6Address, both valid and invalid.
   let sampleIpv4s = [ '172.16.10.1', '172.16.10.0/24', '172.16.10.0 255.255.255.0', '172.16.256.1', '1.1.1.-1'];
   let sampleIpv4sLen = sampleIpv4s.length;
-  let data = null;
-  let data2 = null;
-  let error = null;
 
   // Iterate over sampleCidrs and pass the element's value to getFirstIpAddress().
   for (let i = 0; i < sampleCidrsLen; i++) {
     console.log(`\n--- Test Number ${i + 1} getFirstIpAddress(${sampleCidrs[i]}) ---`);
     // Call getFirstIpAddress and pass the test subnet and an anonymous callback function.
     // The callback is using the fat arrow operator: () => { }
-    getFirstIpAddressAndSecond(sampleCidrs[i], (data,data2, error));
-//    getFirstIpAddressAndSecond(sampleCidrs[i], (data,data2, error) => {
+    let data = getFirstIpAddressAndSecond(sampleCidrs[i]);
+    let ipv4 = data.firstIpAddress,
+        ipv6 = data.secondIpAddress,
+        callbackError = data.callbackError;
+ //   Let { ipv4, ipv6, callbackError } = getFirstIpAddressAndSecond(sampleCidrs[i]);
+//    getFirstIpAddressAndSecond;(sampleCidrs[i], (data,data2, error) => {
       // Now we are inside the callback function.
       // Display the results on the console.
-      if (error) {
-        console.error(`  Error returned from GET request: ${error}`);
+      if (callbackError) {
+        console.error(`  Error returned from GET request: ${callbackError}`);
     } else {
-      console.log(`  Response returned from GET request ipv4 :${data}  ipv6: ${data2}`);
+      console.log(`  Response returned from GET request ipv4 :${ipv4}  ipv6: ${ipv6}`);
     };
   }
   // Iterate over sampleIpv4s and pass the element's value to getIpv4MappedIpv6Address().
