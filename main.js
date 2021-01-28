@@ -22,55 +22,6 @@ const { getIpv4MappedIpv6Address } = require(path.join(__dirname, 'ipv6.js'));
 */
 const IPCIDR = require('ip-cidr');
 
-/**
- * Calculate and return the first host IP address from a CIDR subnet.
- * @param {string} cidrStr - The IPv4 subnet expressed
- *                 in CIDR format.
- * @param {callback} callback - A callback function.
- * @return {string} (firstIpAddress) - An IPv4 address.
- * @return {string} (secondIpAddress) - An ipv6 Address address.
- */
-function getFirstIpAddressA(cidrStr) {
-
-  // Initialize return arguments for callback
-  let firstIpAddress = null;
-  let secondIpAddress = null;
-  let callbackError = null;
-
-  // Instantiate an object from the imported class and assign the instance to variable cidr.
-  const cidr = new IPCIDR(cidrStr);
-  // Initialize options for the toArray() method.
-  // We want an offset of one and a limit of one.
-  // This returns an array with a single element, the first host address from the subnet.
-  const options = {
-    from: 1,
-    limit: 1
-  };
-
-  // Use the object's isValid() method to verify the passed CIDR.
-  if (!cidr.isValid()) {
-    // If the passed CIDR is invalid, set an error message.
-    callbackError = 'Error: Invalid CIDR passed to getFirstIpAddress.';
-  } else {
-    // If the passed CIDR is valid, call the object's toArray() method.
-    // Notice the destructering assignment syntax to get the value of the first array's element.
-    [firstIpAddress] = cidr.toArray(options);
-    let secondIpAddress = getIpv4MappedIpv6Address(firstIpAddress);
-    if( secondIpAddress ) {
-      console.log(`  IPv4 ${firstIpAddress} mapped to IPv6 Address: ${secondIpAddress}`);
-    } else {
-      console.error(`  Problem converting IPv4 ${firstIpAddress} into a mapped IPv6 address.`);
-    }
-  }
-      
-  // Call the passed callback function.
-  // Node.js convention is to pass error data as the first argument to a callback.
-  // The IAP convention is to pass returned data as the first argument and error
-  // data as the second argument to the callback function.
-  return {firstIpAddress, secondIpAddress, callbackError};
-}
-
-
 
 
 class IpAddress {
@@ -86,7 +37,7 @@ class IpAddress {
     * Calculate and return the first host IP address from a CIDR subnet.
     * @param {string} cidrStr - The IPv4 subnet expressed
     *                 in CIDR format.
-    * @return {object} with three variables (IPv4) - An IPv4 address.(IPv6) - An ipv6 Address address. 
+    * @return {object} with two variables (IPv4) - An IPv4 address.(IPv6) - An ipv6 Address address. 
     */
     getFirstIpAddress(cidrStr) {
 
@@ -115,7 +66,7 @@ class IpAddress {
         [ipv4] = cidr.toArray(options);
         let mappedAddress = getIpv4MappedIpv6Address(ipv4);
         if( mappedAddress ) {
-        console.log(`  IPv4 ${ipv4} mapped to IPv6 Address: ${mappedAddress}`);
+        //console.log(`  IPv4 ${ipv4} mapped to IPv6 Address: ${mappedAddress}`);
         ipv6 = mappedAddress;
         } else {
         console.error(`  Problem converting IPv4 ${ipv4} into a mapped IPv6 address.`);
